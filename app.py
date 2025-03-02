@@ -77,7 +77,7 @@ def load_model(path):
     model.eval()
     return model
 
-pseudo_to_cpp_model = load_model("pseudo_to_code.pth")
+pseudo_to_cpp_model = load_model("pusodo_to_code.pth")
 
 st.sidebar.success("✅ Model loaded successfully!")
 
