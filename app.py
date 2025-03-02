@@ -3,12 +3,37 @@ import torch
 import torch.nn as nn
 import json
 import math
+import time
 
 # Load vocabulary
 with open("vocabulary.json", "r") as f:
     vocab = json.load(f)
 
-st.sidebar.write(f"✅ Vocabulary loaded with {len(vocab)} tokens")
+# Streamlit UI Enhancements
+st.set_page_config(page_title="Pseudocode to C++ Translator", page_icon="💡", layout="centered")
+st.markdown("""
+    <style>
+        body {
+            background-color: #1e1e2e;
+            color: white;
+        }
+        .stTextInput, .stTextArea, .stButton {
+            border-radius: 10px;
+        }
+        .stButton > button {
+            background-color: #ff4b4b;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 10px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Sidebar
+st.sidebar.title("Settings ⚙️")
+st.sidebar.success(f"✅ Vocabulary loaded with {len(vocab)} tokens")
 
 # Transformer Configuration
 class Config:
@@ -23,26 +48,11 @@ class Config:
 
 config = Config()
 
-# Positional Encoding
-class PositionalEncoding(nn.Module):
-    def __init__(self, embed_dim, max_len=100):
-        super(PositionalEncoding, self).__init__()
-        pe = torch.zeros(max_len, embed_dim)
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, embed_dim, 2).float() * (-math.log(10000.0) / embed_dim))
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        self.pe = pe.unsqueeze(0)
-
-    def forward(self, x):
-        return x + self.pe[:, :x.size(1)].to(x.device)
-
 # Transformer Model
 class Seq2SeqTransformer(nn.Module):
     def __init__(self, config):
         super(Seq2SeqTransformer, self).__init__()
         self.embedding = nn.Embedding(config.vocab_size, config.embed_dim)
-        self.positional_encoding = PositionalEncoding(config.embed_dim, config.max_length)
         self.transformer = nn.Transformer(
             d_model=config.embed_dim,
             nhead=config.num_heads,
@@ -56,11 +66,8 @@ class Seq2SeqTransformer(nn.Module):
     def forward(self, src, tgt):
         src_emb = self.embedding(src) * math.sqrt(config.embed_dim)
         tgt_emb = self.embedding(tgt) * math.sqrt(config.embed_dim)
-        src_emb = self.positional_encoding(src_emb)
-        tgt_emb = self.positional_encoding(tgt_emb)
         out = self.transformer(src_emb.permute(1, 0, 2), tgt_emb.permute(1, 0, 2))
-        out = self.fc_out(out.permute(1, 0, 2))
-        return out
+        return self.fc_out(out.permute(1, 0, 2))
 
 # Load Model
 @st.cache_resource
@@ -70,9 +77,9 @@ def load_model(path):
     model.eval()
     return model
 
-pseudo_to_cpp_model = load_model("pusodo_to_code.pth")
+pseudo_to_cpp_model = load_model("pseudo_to_code.pth")
 
-st.sidebar.write("✅ Model loaded successfully!")
+st.sidebar.success("✅ Model loaded successfully!")
 
 # Translation Function
 def translate(model, input_tokens, vocab, device, max_length=50):
@@ -92,11 +99,18 @@ def translate(model, input_tokens, vocab, device, max_length=50):
     return " ".join([id_to_token.get(idx, "<unk>") for idx in output_ids[1:]])
 
 # Streamlit UI
-st.title("Pseudocode to C++ Translator")
-user_input = st.text_area("Enter Pseudocode:")
+title_placeholder = st.empty()
+title_placeholder.markdown("<h1 style='text-align: center; color: #ff4b4b;'>Pseudocode to C++ Translator 🚀</h1>", unsafe_allow_html=True)
 
-if st.button("Translate"):
-    tokens = user_input.strip().split()
-    translated_code = translate(pseudo_to_cpp_model, tokens, vocab, config.device)
+st.write("\n")
+st.info("Enter your pseudocode and get an instant C++ translation.")
+user_input = st.text_area("Enter Pseudocode:", height=150)
+
+if st.button("Translate ✨"):
+    with st.spinner("Translating... 🛠️"):
+        tokens = user_input.strip().split()
+        translated_code = translate(pseudo_to_cpp_model, tokens, vocab, config.device)
+        time.sleep(1.5)  # Simulating processing time for animation
+    
     st.subheader("Generated Translation:")
     st.code(translated_code, language="cpp")
