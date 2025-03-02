@@ -62,7 +62,7 @@ class Seq2SeqTransformer(nn.Module):
         out = self.fc_out(out.permute(1, 0, 2))
         return out
 
-# Load Models
+# Load Model
 @st.cache_resource
 def load_model(path):
     model = Seq2SeqTransformer(config).to(config.device)
@@ -70,11 +70,9 @@ def load_model(path):
     model.eval()
     return model
 
-cpp_to_pseudo_model = load_model("cpp_to_pseudo_epoch_1.pth")
 pseudo_to_cpp_model = load_model("transformer_epoch_1.pth")
 
-
-st.sidebar.write("✅ Models loaded successfully!")
+st.sidebar.write("✅ Model loaded successfully!")
 
 # Translation Function
 def translate(model, input_tokens, vocab, device, max_length=50):
@@ -94,15 +92,11 @@ def translate(model, input_tokens, vocab, device, max_length=50):
     return " ".join([id_to_token.get(idx, "<unk>") for idx in output_ids[1:]])
 
 # Streamlit UI
-st.title("C++ & Pseudocode Translator")
-mode = st.radio("Select Translation Mode", ("C++ → Pseudocode", "Pseudocode → C++"))
-user_input = st.text_area("Enter code:")
+st.title("Pseudocode to C++ Translator")
+user_input = st.text_area("Enter Pseudocode:")
 
 if st.button("Translate"):
     tokens = user_input.strip().split()
-    if mode == "C++ → Pseudocode":
-        translated_code = translate(cpp_to_pseudo_model, tokens, vocab, config.device)
-    else:
-        translated_code = translate(pseudo_to_cpp_model, tokens, vocab, config.device)
+    translated_code = translate(pseudo_to_cpp_model, tokens, vocab, config.device)
     st.subheader("Generated Translation:")
-    st.code(translated_code, language="cpp" if mode == "Pseudocode → C++" else "python")
+    st.code(translated_code, language="cpp")
