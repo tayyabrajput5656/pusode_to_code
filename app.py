@@ -70,7 +70,7 @@ def load_model(path):
     model.eval()
     return model
 
-pseudo_to_cpp_model = load_model("transformer_epoch_1.pth")
+pseudo_to_cpp_model = load_model("pusodo_to_code.pth")
 
 st.sidebar.write("✅ Model loaded successfully!")
 
